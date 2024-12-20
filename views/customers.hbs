@@ -1,6 +1,39 @@
 {{#extends "base"}}
 
+
+{{#block "js"}}
+<script>
+ document.querySelector("#search-form").addEventListener('submit', function(e){
+    e.preventDefault(); // stop the form from submitting
+    console.log(e.target.values);
+
+ })
+</script>
+{{/block}}
+
 {{#block "content"}}
+
+
+
+<h1>See All Customers</h1>
+
+
+    <h2>Search</h2>
+    <form id="search-form" method="GET">
+        <div>
+            <label>First Name</label>
+            <input type="text" name="first_name" class="form-control" value="{{searchTerms.first_name}}"/>
+        </div>
+        <div>
+            <label>Last Name</label>
+            <input type="text" name="last_name" class="form-control" value="{{searchTerms.last_name}}" />
+        </div>
+        <input type="submit" value="Search" class="mt-3 btn-primary btn"/>
+        <input type="submit" value="Reset Search" id="clear-search" class="mt-3 btn-primary btn"/>
+    </form>
+
+
+<h2 class="mt-3">Customers</h2>
 <table class="table">
     <thead>
         <tr>
@@ -26,7 +59,11 @@
             {{this.Companies.name}}
         </td>
         <td>
-            <a href="/customers/{{this.Customers.customer_id}}/delete" class="btn btn-danger btn-sm">Delete</a>
+            <a href="/customers/{{this.Customers.customer_id}}/update"
+                class="btn btn-primary btn-sm">Edit</a>
+            <a href="/customers/{{this.Customers.customer_id}}/delete"
+                class="btn btn-danger btn-sm">Delete</a>
+
         </td>
     </tr>
     {{/each}}

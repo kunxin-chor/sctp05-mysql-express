@@ -7,6 +7,11 @@ require('dotenv').config();
 waxOn.on(hbs.handlebars);
 waxOn.setLayoutPath("./views/layouts");
 
+// Include the 188 handlebar helpers
+const helpers = require('handlebars-helpers')({
+  handlebars: hbs.handlebars
+});
+
 const app = express();
 
 // <-- inform Express that we are using hbs as our view engine
@@ -32,11 +37,29 @@ async function main() {
     })
 
     app.get('/customers', async function (req, res) {
+
+        // Begin with a base query
+        // The base query will return all the rows
         // SQL to execute: SELECT * FROM Customers
-        const query = `SELECT * FROM Customers JOIN 
-                        Companies ON Companies.company_id = Customers.company_id
-                        ORDER BY Customers.customer_id DESC
-                    `;
+        let query = `SELECT * FROM Customers JOIN 
+        Companies ON Companies.company_id = Customers.company_id WHERE 1`
+
+        const bindings = [];
+
+        // extract search terms
+        const {first_name, last_name} = req.query;
+
+        if (first_name) {
+            query += ` AND first_name LIKE ?`;
+            bindings.push('%' + first_name +'%')
+        }
+
+        if (last_name) {
+            query += ` AND last_name LIKE ?`;
+            bindings.push('%' + last_name + '%');
+        }
+
+        console.log(query);
 
         // INSTEAD OF:
         // const results = await connection.execute(query);
@@ -49,12 +72,13 @@ async function main() {
         const [customers] = await connection.execute({
             'sql': query,
             'nestTables': true
-        });
+        }, bindings);
 
 
 
         res.render('customers.hbs', {
-            "allCustomers": customers
+            "allCustomers": customers,
+            "searchTerms": req.query
         })
     })
 
@@ -94,6 +118,7 @@ async function main() {
         res.redirect('/customers');
     })
 
+    // Two routes: display the form
     app.get('/customers/:customer_id/delete', async function (req, res) {
         const customer_id = req.params.customer_id;
 
@@ -132,6 +157,28 @@ async function main() {
             })
         }
 
+    })
+
+    // Route: display the edit form
+    app.get('/customers/:customer_id/update', async function(req,res){
+        const [companies] = await connection.execute("SELECT * FROM Companies")
+        const [customers] = await connection.execute(
+            "SELECT * FROM Customers WHERE customer_id = ?",
+            [req.params.customer_id]
+        )
+        const customer = customers[0];
+        res.render('edit_customer', {
+            customer,
+            companies
+        })
+    })
+
+    app.post('/customers/:customer_id/update', async function(req,res){
+        const {first_name, last_name, rating, company_id} = req.body;
+        const query = `UPDATE Customers SET first_name=?, last_name=?, rating=?, company_id=? WHERE customer_id = ?`;
+        const bindings = [first_name, last_name, rating, company_id, req.params.customer_id];
+        await connection.execute(query, bindings);
+        res.redirect('/customers');
     })
 
 }
