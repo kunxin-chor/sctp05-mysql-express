@@ -31,13 +31,13 @@ async function main() {
         res.render('index')
     })
 
-    app.get('/customers', async function(req,res){
+    app.get('/customers', async function (req, res) {
         // SQL to execute: SELECT * FROM Customers
         const query = `SELECT * FROM Customers JOIN 
                         Companies ON Companies.company_id = Customers.company_id
                         ORDER BY Customers.customer_id DESC
                     `;
-    
+
         // INSTEAD OF:
         // const results = await connection.execute(query);
         // // connection.execute will return an array
@@ -51,7 +51,7 @@ async function main() {
             'nestTables': true
         });
 
-    
+
 
         res.render('customers.hbs', {
             "allCustomers": customers
@@ -63,22 +63,22 @@ async function main() {
     // 2nd route -> process the form (POST)
 
     // display the form
-    app.get('/customers/create', async function(req,res){
+    app.get('/customers/create', async function (req, res) {
         const [companies] = await connection.execute("SELECT * FROM Companies")
         console.log(companies);
-        res.render('create_customer',{
+        res.render('create_customer', {
             'companies': companies
         });
     })
-    
+
     // process the form
-    app.post('/customers/create', async function(req,res){
+    app.post('/customers/create', async function (req, res) {
         //  const first_name = req.body.first_name;
         //  const last_name = req.body.last_name;
         //  const rating = req.body.rating;
         //  const company_id = req.body.company_id;
         // Instead we can use object structuring
-        const { first_name, last_name, rating, company_id} = req.body;
+        const { first_name, last_name, rating, company_id } = req.body;
 
         // WARNING: DON'T USE THE CODE BELOW, IT'S SUSPECTIBLE TO SQL INJECTION ATTACKS
         // const query = `INSERT INTO Customers (first_name, last_name, rating, company_id) VALUES ("${first_name}", 
@@ -93,7 +93,47 @@ async function main() {
         // tell the front end to go this particular route
         res.redirect('/customers');
     })
-   
+
+    app.get('/customers/:customer_id/delete', async function (req, res) {
+        const customer_id = req.params.customer_id;
+
+        // NOTE: To delete customers we have to delete all their relationship first
+        const [relatedEmployees] = await connection.execute(
+            "SELECT * FROM EmployeeCustomer WHERE customer_id =?",
+            [customer_id]);
+
+        if (relatedEmployees.length > 0) {
+            res.render('errors', {
+                'errorMessage': "There are still employees serving this customers, hence we cannot delete"
+            })
+            return;
+        }
+
+        // connection.execute("SELECT * ....") will return an array, even if there is only result
+        const [customers] = await connection.execute(
+            "SELECT * FROM Customers WHERE customer_id = ?",
+            [customer_id]);
+        const customerToDelete = customers[0];
+        res.render('confirm_delete_customer', {
+            'customer': customerToDelete
+        }
+        )
+    })
+
+    app.post("/customers/:customer_id/delete", async function (req, res) {
+
+        try {
+            const query = "DELETE FROM Customers WHERE customer_id = ?";
+            await connection.execute(query, [req.params.customer_id]);
+            res.redirect("/customers");
+        } catch (e) {
+            res.render('errors', {
+                'errorMessage': "Unable to delete customer"
+            })
+        }
+
+    })
+
 }
 main();
 

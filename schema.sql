@@ -17,7 +17,8 @@ CREATE TABLE Customers (
     last_name VARCHAR(255) NOT NULL,
     rating INT,
     company_id INT,
-    FOREIGN KEY (company_id) REFERENCES Companies(company_id)
+    FOREIGN KEY (company_id) REFERENCES Companies(company_id),
+    deleted_at DATETIME
 );
 
 -- Creating Departments Table
