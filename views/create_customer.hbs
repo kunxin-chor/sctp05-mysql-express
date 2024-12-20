@@ -1,0 +1,33 @@
+{{#extends "base"}}
+
+{{#block "content"}}
+<h1>Create Customer</h1>
+<form method="POST">
+    <div>
+        <label>First Name</label>
+        <input type="text" name="first_name" class="form-control" />
+    </div>
+    <div>
+        <label>Last Name</label>
+        <input type="text" name="last_name" class="form-control" />
+    </div>
+    <div>
+        <label>Rating</label>
+        <input type="text" name="rating" class="form-control" />
+    </div>
+    <div>
+        <label>Company</label>
+        <select name="company_id" class="form-control">
+            {{#each companies}}
+            <option value="{{this.company_id}}">{{this.name}}</option>
+            {{/each}}
+        </select>
+    </div>
+
+    {{!-- <button type="submit">Create</button> --}}
+    <input type="submit" value="Create" class="btn btn-primary mt-3" />
+</form>
+
+{{/block}}
+
+{{/extends}}
